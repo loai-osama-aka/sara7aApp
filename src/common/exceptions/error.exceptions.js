@@ -2,12 +2,11 @@ import { env } from "../../config/env.service.js";
 
 export const globalErrorHandling = (err, req, res, next) => {
   let stack;
+
   env.mood === "dev" ? (stack = err.stack) : null;
   console.log(err.cause, "errorrrrr");
 
-  return res
-    .status(err.cause?.status ?? 500)
-    .json({ message: err.message ?? "server error", stack });
+  return res.status(err.cause?.status ?? 500).json({ message: err.message ?? "server error", stack, extra: err.cause?.extra });
 };
 
 export const ErrorResponse = ({
@@ -80,6 +79,7 @@ export const NotImplementedException = ({
 } = {}) => {
   return ErrorResponse({ status: 501, message, extra });
 };
+
 
 export const BadGatewayException = ({
   message = "Bad gateway",

@@ -43,7 +43,7 @@ export const auth = (req, res, next) => {
       }
       try {
         const decoded = jwt.verify(token, signature);
-        // console.log(decoded);
+        console.log(decoded, 'decoded');
         req.user = decoded;
       } catch (error) {
         throw UnauthorizedException({ message: "Invalid token" });

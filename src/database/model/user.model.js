@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { genderEnum, providerEnum, roleEnum } from "../../common/index.js";
+import { type } from "os";
 
 const userSchema = Schema(
   {
@@ -46,6 +47,10 @@ const userSchema = Schema(
       type: Boolean,
       default: false,
     },
+    twoStepVerification: {
+      type: Boolean,
+      default: false
+    }
   },
   { timestamps: true },
 );

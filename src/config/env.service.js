@@ -5,6 +5,7 @@ dotenv.config({ path: path.resolve(`./.env.${process.env.NODE_ENV}`) });
 const port = process.env.PORT;
 const saltRounds = process.env.SALT_ROUNDS;
 const databaseUri = process.env.DATABASE_URI;
+const redisUri = process.env.REDIS_URI
 const mood = process.env.MOOD;
 
 // access token
@@ -17,9 +18,14 @@ const user_refresh_token_signature = process.env.USER_REFRESH_TOKEN_SIGNATURE;
 const admin_refresh_token_signature = process.env.ADMIN_REFRESH_TOKEN_SIGNATURE;
 const refresh_token_expiresIN = parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN);
 
+
+//send email
+const sendEmail = process.env.SEND_EMAIL
+const pass = process.env.APP_PASS
 export const env = {
   port,
   databaseUri,
+  redisUri,
   saltRounds,
   mood,
   userAccessTokenSignature,
@@ -28,4 +34,6 @@ export const env = {
   user_refresh_token_signature,
   admin_refresh_token_signature,
   refresh_token_expiresIN,
+  sendEmail,
+  pass
 };
