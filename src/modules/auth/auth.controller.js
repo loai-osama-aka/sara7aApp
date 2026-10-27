@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { checkTwoStepOtp, forgetPassword, generateNewAccessToken, getAllUsers, login, reSendVerifyAccount, resetForgetPassword, signup, twoStepVerification, verifyAccount, verifyForgetPassword, verifyTwoStepVerification } from "./auth.service.js";
+import { checkTwoStepOtp, forgetPassword, generateNewAccessToken, login, reSendVerifyAccount, resetForgetPassword, signup, signupOrLoginWithGoogle, twoStepVerification, verifyAccount, verifyForgetPassword, verifyTwoStepVerification } from "./auth.service.js";
 import { confirmEmailSchema, loginSchema, loginValidation, resetForgetPasswordSchema, signupSchema } from "./auth.validation.js";
 import { validation } from "../../middleware/validation.middleware.js";
 import { auth } from './../../middleware/authentication.middleware.js';
@@ -48,6 +48,13 @@ router.post("/login", validation(loginValidation), async (req, res) => {
   res.send(response);
 });
 
+// signup & login using google
+router.post("/google", async (req, res) => {
+  const { idToken } = req.body
+  const response = await signupOrLoginWithGoogle(idToken);
+  res.send(response);
+});
+
 // generate new access token
 router.post("/generate-access-token", async (req, res) => {
   const { refreshToken } = req.body;
@@ -90,10 +97,5 @@ router.patch('/reset-forget-password', validation(resetForgetPasswordSchema), as
   res.json(response)
 })
 
-// get all user (admin only)
-router.get('/get-all-users', auth, autherization(['1']), async (req, res) => {
-  const response = await getAllUsers()
-  res.json(response)
-})
 
 export default router;

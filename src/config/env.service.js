@@ -22,6 +22,10 @@ const refresh_token_expiresIN = parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN);
 //send email
 const sendEmail = process.env.SEND_EMAIL
 const pass = process.env.APP_PASS
+
+// GOOGLE_CLIENT_ID
+const googleClientId = process.env.GOOGLE_CLIENT_ID
+
 export const env = {
   port,
   databaseUri,
@@ -35,5 +39,6 @@ export const env = {
   admin_refresh_token_signature,
   refresh_token_expiresIN,
   sendEmail,
-  pass
+  pass,
+  googleClientId
 };

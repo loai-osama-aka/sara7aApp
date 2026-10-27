@@ -4,6 +4,7 @@ import {
   ConflictException,
   generateHash,
   NotFoundException,
+  providerEnum,
 } from "../../common/index.js";
 import {
   generateAccessToken,
@@ -11,6 +12,8 @@ import {
 } from "../../common/services/token.service.js";
 import { userModel } from "../../database/model/user.model.js";
 import { del, emailKey, emailTrialKey, get, keys, maxLoginAttempts, sendEmailOtp, set, ttl } from "../../common/services/redis.service.js";
+import { OAuth2Client } from 'google-auth-library';
+import { env } from "../../config/env.service.js";
 
 
 //signup api
@@ -108,18 +111,19 @@ export const login = async (body) => {
   if (!user.isVerified) {
     throw BadRequestException({ message: "user is not verified yet" })
   }
-  if (user.twoStepVerification) {
-    await sendEmailOtp(email, 'twoStepVerify', 'Confirm two step verification')
 
-    return { message: "please verify your email an otp sent to your gmail", }
-  }
   const isMatched = await compareHash(password, user.password);
 
   if (isMatched) {
     // no max attempts reached yet
+    if (user.twoStepVerification) {
+      await sendEmailOtp(email, 'twoStepVerify', 'Confirm two step verification')
+
+      return { message: "please verify your email an otp sent to your gmail", }
+    }
     if (await ttl(emailTrialKey(email, 'loginAttempts')) < 0) {
       await set(emailTrialKey(email, 'loginAttempts'), 0)
-      let { accessToken, refreshToken } = generateToken(user);
+      const { accessToken, refreshToken } = generateToken(user);
 
       return { message: "login successfully", accessToken, refreshToken };
     } else {
@@ -138,6 +142,66 @@ export const generateNewAccessToken = async (refreshToken) => {
   let accessToken = await generateAccessToken(refreshToken);
   return { accessToken };
 };
+
+
+
+
+
+const client = new OAuth2Client();
+async function verifyGoogleAccount(idToken) {
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: env.googleClientId,  // Specify the WEB_CLIENT_ID of the app that accesses the backend
+    // Or, if multiple clients access the backend:
+    //[WEB_CLIENT_ID_1, WEB_CLIENT_ID_2, WEB_CLIENT_ID_3]
+  });
+  const payload = ticket.getPayload();
+  return payload
+}
+
+// signup & login using google
+export const signupOrLoginWithGoogle = async (idToken) => {
+  // console.log({ idToken });
+  const payload = await verifyGoogleAccount(idToken)
+  // console.log({ payload });
+
+  if (!idToken) {
+    // console.log('errorrrr');
+
+    return BadRequestException({ message: "Google credential is required." })
+  }
+
+  if (payload.email_verified !== true) {
+    return BadRequestException({ message: "email not verified by Google" })
+  }
+
+  const existEmail = await userModel.findOne({ email: payload.email })
+  // console.log(existEmail, 'exist');
+
+  if (existEmail) {
+    //user  login using system provider so it should throw error so he login with email and password
+    if (existEmail.provider == providerEnum.System) {
+      return BadRequestException({ message: "you cant login using gmail please enter your email and password" })
+    }
+    // means the user exist and trying to login using gmail 
+
+    const { accessToken, refreshToken } = generateToken(existEmail)
+    return { message: "user created successfully", tokens: { accessToken, refreshToken }, user: existEmail }
+  }
+
+  //means user has not been created yet so it will be created and login aswell
+  const user = await userModel.create({
+    userName: payload.name,
+    email: payload.email,
+    isVerified: payload.email_verified,
+    profileImage: payload.picture,
+    provider: providerEnum.google
+  })
+  const { accessToken, refreshToken } = generateToken(user)
+  return { message: "user created successfully", tokens: { accessToken, refreshToken }, user }
+
+
+}
 
 
 // verify account
@@ -218,8 +282,3 @@ export const resetForgetPassword = async (otp, email, password) => {
   return { message: "password changed successfully" }
 }
 
-//get all users
-export const getAllUsers = async () => {
-  const users = await userModel.find()
-  return { users }
-}

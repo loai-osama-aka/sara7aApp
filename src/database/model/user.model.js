@@ -17,7 +17,9 @@ const userSchema = Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: function () {
+        return this.provider == providerEnum.System
+      },
     },
     age: {
       type: Number,

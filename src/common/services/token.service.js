@@ -66,6 +66,7 @@ export const generateAccessToken = async (refreshToken) => {
   try {
     const decodeRefreshToken = jwt.verify(refreshToken, refreshSignature);
     console.log(decodeRefreshToken);
+
     const newAcessToken = jwt.sign({}, signature, {
       expiresIn: env.access_token_expiresIN,
       audience: aud,

@@ -10,3 +10,10 @@ export const getUserById = async (id) => {
   }
   return user;
 };
+
+
+//get all users
+export const getAllUsers = async () => {
+  const users = await userModel.find()
+  return { users }
+}
