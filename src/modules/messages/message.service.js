@@ -38,14 +38,16 @@ export const createMessage = async ({ content, receiverId, uniqueName } = {}, fi
 
 export const getAllMessages = async ({ type, page, limit }, user) => {
     console.log(type, 'type');
-    let filter = {}
+
+    let filter = {};
 
     if (type == "0") {
         // messages that have been sent to me
-        filter = { receiverId: user.sub }
+        filter = { receiverId: user.sub };
+
     } else if (type == "1") {
         // messages that i sent
-        filter = { senderId: user.sub }
+        filter = { senderId: user.sub };
 
     } else {
         // all messages i sent and received
@@ -54,24 +56,40 @@ export const getAllMessages = async ({ type, page, limit }, user) => {
                 { receiverId: user.sub },
                 { senderId: user.sub }
             ]
-        }
+        };
     }
 
-    const skip = (page - 1) * limit
-    const count = await countDocuments({ model: messageModel, filter })
-    const pages = Math.ceil(count / limit)
+    const skip = (page - 1) * limit;
+
+    const count = await countDocuments({
+        model: messageModel,
+        filter
+    });
+
+    const pages = Math.ceil(count / limit);
+
     const messages = await find({
-        model: messageModel, filter, options: {
+        model: messageModel,
+        filter,
+        options: {
             limit,
             skip,
-            sort: { createdAt: -1 }
+            sort: { createdAt: -1 },
+            populate: {
+                path: "senderId",
+                select: "userName uniqueName"
+            }
         }
-    })
+    });
 
-
-    return { count, limit, pages, currentPage: page, messages }
-
-}
+    return {
+        count,
+        limit,
+        pages,
+        currentPage: page,
+        messages
+    };
+};
 
 export const deleteMessage = async ({ messageId }, user) => {
 

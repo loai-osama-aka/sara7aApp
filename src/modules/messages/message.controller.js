@@ -23,7 +23,7 @@ router.post('/create-message-by-account',
     , upload({ validation: fileValidation.image }).array('attachments', 3),
     validation(messageContentValidationSchema),
     async (req, res) => {
-        console.log(req.files);
+        // console.log(req.files);
         const data = await createMessage(req.body, req.files, req.user)
         return successResponse({ res, data, status: 201 })
     })
