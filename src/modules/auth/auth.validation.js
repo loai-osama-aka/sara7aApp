@@ -1,7 +1,11 @@
 import { email, z } from 'zod'
 
 export const loginSchema = z.object({
-    email: z.email({ message: "invalid email formate please add valid format  like exmaple@any.com" }),
+    email: z
+        .email({ message: "Please enter a valid Gmail address" })
+        .refine((email) => email.endsWith("@gmail.com"), {
+            message: "Email must be a Gmail address",
+        }),
     password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]{8,}$/)
 })
 
@@ -45,7 +49,11 @@ export const confirmEmailSchema = z.object({
 
 export const resetForgetPasswordSchema = z.object({
     body: z.strictObject({
-        email: z.email({ message: "invalid email formate please add valid format  like exmaple@any.com" }),
+        email: z
+            .email({ message: "Please enter a valid Gmail address" })
+            .refine((email) => email.endsWith("@gmail.com"), {
+                message: "Email must be a Gmail address",
+            }),
         otp: z.string().regex(/[\d]{5,6}/),
         password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]{8,}$/),
         confirmPassword: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]{8,}$/)
