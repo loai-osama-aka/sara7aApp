@@ -19,7 +19,6 @@ const userSchema = Schema(
       required: function () {
         return this.provider == providerEnum.System
       },
-      select: false
     },
     age: {
       type: Number,

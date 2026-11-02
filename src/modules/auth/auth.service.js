@@ -108,6 +108,9 @@ export const checkTwoStepOtp = async (email, otp) => {
 export const login = async (body) => {
   const { email, password } = body;
   const user = await userModel.findOne({ email });
+  console.log(user);
+
+
 
   if (!user) {
     return NotFoundException({ message: "user does not exist" });
