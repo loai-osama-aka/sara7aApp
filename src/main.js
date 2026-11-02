@@ -12,6 +12,17 @@ import cors from "cors";
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// root route, so the host's health check gets a 200 instead of a 404
+app.get("/", (req, res) => {
+  res.status(200).json({ message: "sara7a api is running", status: 200 });
+});
+
+// dedicated health endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", uptime: process.uptime() });
+});
+
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
 app.use("/message", messageRouter);
