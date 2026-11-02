@@ -283,9 +283,7 @@ export const signupOrLoginWithGoogle = async (idToken) => {
 export const verifyAccount = async (otp, email) => {
   const user = await userModel.findOne({ email })
 
-  if (user.isVerified) {
-    throw BadRequestException({ message: "user already verified" })
-  }
+
   await verifyOtp({ email, subject: 'confirmEmail', otp })
   user.isVerified = true
   const getKeys = await keys(`User::${email}::confirmEmail::*`);
