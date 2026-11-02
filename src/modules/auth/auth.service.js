@@ -302,10 +302,6 @@ export const verifyAccount = async (otp, email) => {
 // reSend otp to VerifyAccount
 export const reSendVerifyAccount = async (email) => {
 
-  if (user.isVerified) {
-    throw BadRequestException({ message: "user already verified" })
-  }
-
   await sendEmailOtp(email, 'confirmEmail', 'Confirm email otp')
   return { message: "OTP sent successfully", }
 }
