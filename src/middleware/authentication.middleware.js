@@ -1,8 +1,9 @@
 // import jwt from "jsonwebtoken";
 // import { env } from "../config/env.service.js";
-import { UnauthorizedException } from "../common/index.js";
+import { UnauthorizedException, BadRequestException } from "../common/index.js";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.service.js";
+import { exists, revokeTokenKey } from "../common/services/redis.service.js";
 
 // export const auth = (req, res, next) => {
 //   // console.log(req.headers.token, "token");
@@ -24,13 +25,24 @@ import { env } from "../config/env.service.js";
 //   }
 // };
 
-export const auth = (req, res, next) => {
+export const auth = async (req, res, next) => {
   // console.log(req.headers.authorization);
+  if (!req.headers.authorization) {
+    throw UnauthorizedException({ message: "no token found" })
+  }
   const [flag, token] = req.headers.authorization.split(" ");
   // console.log(flag, "||", token);
   switch (flag) {
     case "Bearer":
       const payload = jwt.decode(token);
+      if (!payload) {
+        throw BadRequestException({ message: "Invalid token format" })
+      }
+      console.log(await exists(revokeTokenKey(payload.sub, payload.jti)), 'ls');
+
+      if (await exists(revokeTokenKey(payload.sub, payload.jti))) {
+        throw UnauthorizedException({ message: "Expired login credentials" })
+      }
       let signature;
       switch (payload.aud) {
         case "admin":
@@ -52,6 +64,7 @@ export const auth = (req, res, next) => {
       break;
 
     default:
+      throw UnauthorizedException({ message: "Invalid authorization scheme" });
       break;
   }
 

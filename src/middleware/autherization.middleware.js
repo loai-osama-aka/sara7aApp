@@ -1,4 +1,4 @@
-import { UnauthorizedException } from "../common/index.js";
+import { NotFoundException, UnauthorizedException } from "../common/index.js";
 import { userModel } from "../database/model/user.model.js"
 
 export const autherization = (roles) => {
@@ -6,7 +6,9 @@ export const autherization = (roles) => {
         console.log(req.user.sub);
 
         const user = await userModel.findById(req.user.sub)
-
+        if (!user) {
+            throw NotFoundException({ message: "user not found" })
+        }
         if (!roles.includes(user.role)) {
             throw UnauthorizedException()
         }

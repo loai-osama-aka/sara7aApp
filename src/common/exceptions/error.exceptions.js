@@ -4,7 +4,7 @@ export const globalErrorHandling = (err, req, res, next) => {
   let stack;
 
   env.mood === "dev" ? (stack = err.stack) : null;
-  console.log(err.cause, "errorrrrr");
+  // console.log(err.cause, "errorrrrr");
 
   return res.status(err.cause?.status ?? 500).json({ message: err.message ?? "server error", stack, extra: err.cause?.extra });
 };

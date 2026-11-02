@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { checkTwoStepOtp, forgetPassword, generateNewAccessToken, login, reSendVerifyAccount, resetForgetPassword, signup, signupOrLoginWithGoogle, twoStepVerification, verifyAccount, verifyForgetPassword, verifyTwoStepVerification } from "./auth.service.js";
+import { checkTwoStepOtp, forgetPassword, generateNewAccessToken, login, logout, reSendVerifyAccount, resetForgetPassword, signup, signupOrLoginWithGoogle, twoStepVerification, verifyAccount, verifyForgetPassword, verifyTwoStepVerification } from "./auth.service.js";
 import { confirmEmailSchema, loginSchema, loginValidation, resetForgetPasswordSchema, signupSchema } from "./auth.validation.js";
 import { validation } from "../../middleware/validation.middleware.js";
 import { auth } from './../../middleware/authentication.middleware.js';
-import { autherization } from "../../middleware/autherization.middleware.js";
+import { uploadProfileImage } from "../user/user.service.js";
 import { fileValidation, upload } from "../../middleware/multer.js";
 const router = Router();
 
@@ -13,11 +13,10 @@ router.post("/signup", validation(signupSchema), async (req, res) => {
   res.send(response);
 });
 
-//upload profile image 
-router.patch("/upload-image-profile", upload({ validation: fileValidation.image }).array('image', 2), async (req, res) => {
-  console.log(req.file ?? req.files);
-
-  res.send({ file: req.files ?? req.file });
+//upload profile image
+router.patch("/upload-image-profile", auth, upload({ validation: fileValidation.image }).single('image'), async (req, res) => {
+  const response = await uploadProfileImage({ file: req.file, user: req.user });
+  res.json(response);
 });
 
 // request a twoStepVerification
@@ -59,6 +58,13 @@ router.post("/google", async (req, res) => {
 router.post("/generate-access-token", async (req, res) => {
   const { refreshToken } = req.body;
   const response = await generateNewAccessToken(refreshToken);
+  res.json(response);
+});
+
+// generate new access token
+router.post("/logout", auth, async (req, res) => {
+  // const { refreshToken } = req.body;
+  const response = await logout(req.user);
   res.json(response);
 });
 

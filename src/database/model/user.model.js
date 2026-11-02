@@ -1,6 +1,5 @@
 import mongoose, { Schema } from "mongoose";
 import { genderEnum, providerEnum, roleEnum } from "../../common/index.js";
-import { type } from "os";
 
 const userSchema = Schema(
   {
@@ -20,6 +19,7 @@ const userSchema = Schema(
       required: function () {
         return this.provider == providerEnum.System
       },
+      select: false
     },
     age: {
       type: Number,

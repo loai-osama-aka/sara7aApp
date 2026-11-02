@@ -8,6 +8,8 @@ export const validation = (schema) => {
             body: req.body,
             query: req.query,
             params: req.params,
+            files: req.files,
+            file: req.file,
         })
 
         // console.log(req.validation);
