@@ -282,9 +282,7 @@ export const signupOrLoginWithGoogle = async (idToken) => {
 // verify account
 export const verifyAccount = async (otp, email) => {
   const user = await userModel.findOne({ email })
-  if (!user) {
-    throw NotFoundException({ message: "no email found " })
-  }
+
   if (user.isVerified) {
     throw BadRequestException({ message: "user already verified" })
   }
