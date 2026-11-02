@@ -52,6 +52,15 @@ const userSchema = Schema(
     twoStepVerification: {
       type: Boolean,
       default: false
+    },
+    uniqueName: {
+      type: String,
+      required: true,
+      unique: true,
+      minlength: 3,
+      maxlength: 20,
+      lowercase: true,
+      match: /^[a-z0-9_]+$/,
     }
   },
   { timestamps: true },

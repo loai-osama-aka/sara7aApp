@@ -13,6 +13,25 @@ export const getUserById = async (id) => {
 };
 
 
+// public lookup used by share links (`/<uniqueName>`).
+// Only returns what an anonymous sender needs, never the full account.
+export const getPublicUserByUniqueName = async (uniqueName) => {
+  const slug = String(uniqueName ?? "").trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,20}$/.test(slug)) {
+    throw BadRequestException({ message: "invalid uniqueName" });
+  }
+
+  const user = await userModel
+    .findOne({ uniqueName: slug })
+    .select("userName uniqueName profileImage");
+
+  if (!user) {
+    throw NotFoundException({ message: "no account uses that uniqueName" });
+  }
+
+  return user;
+};
+
 //get all users
 export const getAllUsers = async () => {
   const users = await userModel.find()

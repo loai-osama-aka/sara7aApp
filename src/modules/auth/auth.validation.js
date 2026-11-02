@@ -18,7 +18,11 @@ export const signupSchema = z.object({
         userName: z.string().min(2, { message: "minimum username length is 2 char" }),
         phone: z.e164(),
         age: z.number(),
-        gender: z.enum(['0', '1'], { message: "enter 0 for male or 1 for female" })
+        gender: z.enum(['0', '1'], { message: "enter 0 for male or 1 for female" }),
+        uniqueName: z.string()
+            .min(3, { message: "uniqueName must be at least 3 characters" })
+            .max(20, { message: "uniqueName must be at most 20 characters" })
+            .regex(/^[a-z0-9_]+$/, { message: "only lowercase letters, numbers and underscore are allowed" })
     }).refine((data) => {
         return data.password === data.confirmPassword
 

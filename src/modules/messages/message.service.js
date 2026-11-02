@@ -4,16 +4,28 @@ import { countDocuments, findOneAndDelete, find, findOne } from "../../common/re
 import { messageModel } from './../../database/model/message.model.js';
 import { removeStoredFiles, uploadedFileUrl } from "../../common/utils/file/storage.js";
 
-export const createMessage = async ({ content, receiverId } = {}, files = [], user = undefined) => {
-    const receiverExist = await userModel.findById(receiverId)
-    if (!receiverExist) {
-        throw BadRequestException({ message: "receiverId not exist" })
+export const createMessage = async ({ content, receiverId, uniqueName } = {}, files = [], user = undefined) => {
+    // the share link only carries the uniqueName, so resolve it to the real _id here
+    let receiver = null
+    if (receiverId) {
+        receiver = await userModel.findById(receiverId).select("_id")
+    } else if (uniqueName) {
+        receiver = await userModel
+            .findOne({ uniqueName: String(uniqueName).trim().toLowerCase() })
+            .select("_id")
     }
+
+    if (!receiver) {
+        throw BadRequestException({
+            message: receiverId ? "receiverId not exist" : "no account uses that uniqueName"
+        })
+    }
+    const targetId = receiver._id
 
 
     const message = await messageModel.create({
         content,
-        receiverId,
+        receiverId: targetId,
         // file.path is OS-specific (backslashes on Windows), so build the url from the filename instead
         attachments: files.map(uploadedFileUrl),
         ...(user ? { senderId: user.sub } : {})

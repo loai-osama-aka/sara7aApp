@@ -4,9 +4,15 @@ import z from "zod";
 export const messageContentValidationSchema = z.object({
     body: z.strictObject({
         content: z.string().min(2).max(50000).optional(),
+        // either the receiver's _id or their uniqueName (share link) is enough
         receiverId: z.string().refine((data) => {
             return mongoose.Types.ObjectId.isValid(data)
-        }, { message: "invalid format " })
+        }, { message: "invalid format " }).optional(),
+        uniqueName: z.string()
+            .min(3, { message: "uniqueName must be at least 3 characters" })
+            .max(20, { message: "uniqueName must be at most 20 characters" })
+            .regex(/^[a-z0-9_]+$/i, { message: "invalid uniqueName" })
+            .optional()
     }),
     files: z.array(
         z.strictObject({
@@ -23,6 +29,13 @@ export const messageContentValidationSchema = z.object({
     ).max(3).optional()
 
 }).superRefine((data, context) => {
+    if (!data.body.receiverId && !data.body.uniqueName) {
+        context.addIssue({
+            code: 'custom',
+            path: ['receiverId'],
+            message: "receiverId or uniqueName is required"
+        })
+    }
     if (!data.body.content && !data.files?.length) {
         context.addIssue({
             code: 'custom',
