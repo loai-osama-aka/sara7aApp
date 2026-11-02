@@ -21,24 +21,11 @@ import { env } from "../../config/env.service.js";
 export const signup = async (body) => {
   const { userName, email, phone, age, password, confirmPassword, gender, uniqueName } = body;
   // console.log(body);
-  const slug = String(uniqueName ?? "").trim().toLowerCase();
-  if (!slug) {
-    return BadRequestException({ message: "uniqueName is required" });
-  }
-  if (slug.length < 3 || slug.length > 20 || !/^[a-z0-9_]+$/.test(slug)) {
-    return BadRequestException({ message: "uniqueName must be 3-20 chars and only lowercase letters, numbers and underscore" });
-  }
-
-  const existedMail = await userModel.findOne({ email });
+  const slug = uniqueName.trim().toLowerCase()
+  let existedMail = await userModel.findOne({ email });
   if (existedMail) {
     return ConflictException({ message: "email already exist!" });
   }
-
-  const existedUniqueName = await userModel.findOne({ uniqueName: slug });
-  if (existedUniqueName) {
-    return ConflictException({ message: "uniqueName is already taken" });
-  }
-
   if (password !== confirmPassword) {
     return BadRequestException({
       message: "password and confirm password doesnot match",
@@ -46,28 +33,16 @@ export const signup = async (body) => {
   }
   const hashedPassword = await generateHash({ plainText: password });
   // generate OTP
-  let user;
-  try {
-    user = await userModel.create({
-      userName,
-      email,
-      phone,
-      age,
-      password: hashedPassword,
-      gender,
-      uniqueName: slug,
-    });
-  } catch (err) {
-    if (err?.code === 11000) {
-      if (err?.keyPattern?.uniqueName || err?.keyValue?.uniqueName) {
-        return ConflictException({ message: "uniqueName is already taken" });
-      }
-      if (err?.keyPattern?.email || err?.keyValue?.email) {
-        return ConflictException({ message: "email already exist!" });
-      }
-    }
-    throw err;
-  }
+  const user = await userModel.create({
+    userName,
+    email,
+    phone,
+    age,
+    password: hashedPassword,
+    gender,
+    uniqueName: slug
+
+  });
 
   await sendEmailOtp(email, 'confirmEmail', 'Confirm email otp')
 
@@ -196,25 +171,6 @@ async function verifyGoogleAccount(idToken) {
   return payload
 }
 
-// builds a free uniqueName from a Google display name: "loai osama" -> "loai", "loai1234"
-const buildFreeUniqueName = async (seed) => {
-  const raw = String(seed || "user")
-    .toLowerCase()
-    .replace(/\s+/g, "_")
-    .replace(/[^a-z0-9_]/g, "");
-  // 3-20 chars, and keep 4 chars free for the random suffix
-  const base = (raw.length >= 3 ? raw : `${raw || "user"}sara7a`).slice(0, 14);
-
-  let uniqueName = base;
-  let tries = 0;
-  while (await userModel.exists({ uniqueName })) {
-    uniqueName = `${base}${Math.floor(1000 + Math.random() * 9000)}`;
-    tries++;
-    if (tries > 10) break;
-  }
-  return uniqueName;
-};
-
 // signup & login using google
 export const signupOrLoginWithGoogle = async (idToken) => {
   if (!idToken) {
@@ -241,31 +197,23 @@ export const signupOrLoginWithGoogle = async (idToken) => {
     }
     // means the user exist and trying to login using gmail 
 
-    // accounts created before uniqueName existed get one on their next google login
-    if (!existEmail.uniqueName) {
-      try {
-        existEmail.uniqueName = await buildFreeUniqueName(payload.given_name || payload.name);
-        await existEmail.save();
-      } catch {
-        // a failed backfill must not block the login
-      }
-    }
-
     const { accessToken, refreshToken } = generateToken(existEmail)
     return { message: "user created successfully", tokens: { accessToken, refreshToken }, user: existEmail }
   }
 
 
-  const uniqueName = await buildFreeUniqueName(payload.given_name || payload.name?.split(" ")[0]);
+  const base = (payload.given_name || payload.name?.split(" ")[0] || "user")
+    .toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+  let uniqueName = base;
+  let tries = 0;
+  while (await userModel.exists({ uniqueName })) {
+    uniqueName = `${base}${Math.floor(1000 + Math.random() * 9000)}`;
+    tries++; if (tries > 10) break;
+  }
 
-  // the schema caps userName at 20 chars, google names can be longer
-  const googleName = String(payload.name || payload.email?.split("@")[0] || "user").trim();
-  const userName =
-    googleName.length >= 3 ? googleName.slice(0, 20) : `${googleName || "user"}sara7a`.slice(0, 20);
-
-  // means user has not been created yet so it will be created and login aswell
+  //means user has not been created yet so it will be created and login aswell
   const user = await userModel.create({
-    userName,
+    userName: payload.name,
     email: payload.email,
     isVerified: payload.email_verified,
     profileImage: payload.picture,
@@ -282,8 +230,12 @@ export const signupOrLoginWithGoogle = async (idToken) => {
 // verify account
 export const verifyAccount = async (otp, email) => {
   const user = await userModel.findOne({ email })
-
-
+  if (!user) {
+    throw NotFoundException({ message: "no email found " })
+  }
+  if (user.isVerified) {
+    throw BadRequestException({ message: "user already verified" })
+  }
   await verifyOtp({ email, subject: 'confirmEmail', otp })
   user.isVerified = true
   const getKeys = await keys(`User::${email}::confirmEmail::*`);
@@ -297,6 +249,13 @@ export const verifyAccount = async (otp, email) => {
 
 // reSend otp to VerifyAccount
 export const reSendVerifyAccount = async (email) => {
+  const user = await userModel.findOne({ email })
+  if (!user) {
+    throw NotFoundException({ message: "no email found " })
+  }
+  if (user.isVerified) {
+    throw BadRequestException({ message: "user already verified" })
+  }
 
   await sendEmailOtp(email, 'confirmEmail', 'Confirm email otp')
   return { message: "OTP sent successfully", }

@@ -31,9 +31,16 @@ export const signupSchema = z.object({
 
 export const confirmEmailSchema = z.object({
     body: z.object({
-        email: z.email({ message: "invalid email formate please add valid format  like exmaple@any.com" }),
-        otp: z.string().regex(/[\d]{5,6}/).optional()
-    })
+        email: z
+            .email({ message: "Please enter a valid Gmail address" })
+            .refine((email) => email.endsWith("@gmail.com"), {
+                message: "Email must be a Gmail address",
+            }),
+
+        otp: z.string().regex(/^\d{6}$/, {
+            message: "OTP must be  6 digits",
+        }).optional()
+    }),
 })
 
 export const resetForgetPasswordSchema = z.object({
