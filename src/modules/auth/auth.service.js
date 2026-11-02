@@ -301,10 +301,7 @@ export const verifyAccount = async (otp, email) => {
 
 // reSend otp to VerifyAccount
 export const reSendVerifyAccount = async (email) => {
-  const user = await userModel.findOne({ email })
-  if (!user) {
-    throw NotFoundException({ message: "no email found " })
-  }
+
   if (user.isVerified) {
     throw BadRequestException({ message: "user already verified" })
   }
