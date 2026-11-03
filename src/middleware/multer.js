@@ -1,7 +1,9 @@
 import multer from "multer";
 import { randomUUID } from 'crypto'
 import path from "node:path";
-
+import { fileURLToPath } from 'node:url'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const uploadsDir = path.resolve(__dirname, '../../uploads')
 
 export const fileValidation = {
     image: ["image/jpeg", 'image/png', 'image/jpg', 'image/gif'],
@@ -12,7 +14,7 @@ export const upload = ({ maxSize = 5, validation = [] } = {}) => {
 
     const storage = multer.diskStorage({
         destination: (req, file, cb) => {
-            cb(null, './uploads')
+            cb(null, uploadsDir)
         },
         filename: (req, file, cb) => {
             const ext = path.extname(file.originalname).toLowerCase()

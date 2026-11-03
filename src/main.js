@@ -12,13 +12,13 @@ import { cleanupUploads } from "./middleware/cleanupUploads.js";
 import cors from "cors";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadsDir = path.resolve(__dirname, '../uploads')
 // the built React app, copied here by `npm run build:web`
 const publicDir = path.resolve(__dirname, "../public");
 const indexFile = path.join(publicDir, "index.html");
 const hasWebApp = fs.existsSync(indexFile);
 // api paths must never fall back to index.html
 const apiPrefixes = ["/auth", "/user", "/message", "/uploads", "/health"];
-
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -37,14 +37,14 @@ app.get("/health", (req, res) => {
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
 app.use("/message", messageRouter);
-
+app.use('/uploads', express.static(uploadsDir))
 
 // const __fileName = pathToFileURL(import.meta.url)
 // // console.log(__fileName.pathname);
 // const __dirName = path.resolve(__fileName.pathname)
 // console.log(__dirName);
 // const imagePath
-app.use('/uploads', express.static('./uploads'))
+
 
 if (hasWebApp) {
   app.use(express.static(publicDir, { index: false }));
