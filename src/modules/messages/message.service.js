@@ -75,10 +75,16 @@ export const getAllMessages = async ({ type, page, limit }, user) => {
             limit,
             skip,
             sort: { createdAt: -1 },
-            populate: {
-                path: "senderId",
-                select: "userName uniqueName"
-            }
+            populate: [
+                {
+                    path: "senderId",
+                    select: "userName uniqueName"
+                },
+                {
+                    path: "receiverId",
+                    select: "userName uniqueName"
+                }
+            ]
         }
     });
 
