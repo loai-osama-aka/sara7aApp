@@ -2,8 +2,10 @@ import multer from "multer";
 import { randomUUID } from 'crypto'
 import path from "node:path";
 import { fileURLToPath } from 'node:url'
+import { uploadsDir } from "../common/utils/file/storage.js";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const uploadsDir = path.resolve(__dirname, '../../uploads')
+
 
 export const fileValidation = {
     image: ["image/jpeg", 'image/png', 'image/jpg', 'image/gif'],

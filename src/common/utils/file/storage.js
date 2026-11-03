@@ -1,28 +1,34 @@
+
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-// multer writes into ./uploads (relative to the cwd) and main.js serves the same folder
-export const uploadsDir = path.resolve("./uploads");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// server/src/common/utils/file -> server/uploads
+export const uploadsDir = path.resolve(__dirname, "../../../../uploads");
+
+await fs.mkdir(uploadsDir, { recursive: true });
 
 const isStoredUpload = (value) =>
     typeof value === "string" &&
-    (value.startsWith("/uploads/") || value.startsWith("uploads/") || value.startsWith("uploads\\"));
+    (value.startsWith("/uploads/") ||
+        value.startsWith("uploads/") ||
+        value.startsWith("uploads\\"));
 
-// "/uploads/x.png", "uploads\\x.png" and "x.png" all resolve to <uploadsDir>/x.png.
-// taking the last segment makes sure a crafted value can never escape the uploads folder
-const toAbsolutePath = (value) => path.join(uploadsDir, value.split(/[\\/]/).pop());
+const toAbsolutePath = (value) =>
+    path.join(uploadsDir, path.basename(value));
 
-// the value we store in the database: forward slashes only, so the url works on every client
-export const uploadedFileUrl = (file) => `/uploads/${file.filename}`;
+export const uploadedFileUrl = (file) =>
+    `/uploads/${file.filename}`;
 
 export const removeStoredFiles = async (storedFiles = []) => {
-    const files = storedFiles.filter(isStoredUpload).map(toAbsolutePath);
+    const files = storedFiles
+        .filter(isStoredUpload)
+        .map(toAbsolutePath);
 
     await Promise.all(
         files.map(async (file) => {
-            if (!file.startsWith(uploadsDir + path.sep)) {
-                return;
-            }
             try {
                 await fs.unlink(file);
             } catch (error) {
@@ -34,7 +40,6 @@ export const removeStoredFiles = async (storedFiles = []) => {
     );
 };
 
-// used on the error path: multer already wrote the files before the request failed
 export const removeUploadedFiles = async (req) => {
     const files = req.files ?? (req.file ? [req.file] : []);
 

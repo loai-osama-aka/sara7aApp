@@ -8,11 +8,10 @@ import userRouter from "./modules/user/user.controller.js";
 import messageRouter from "./modules/messages/message.controller.js";
 import { globalErrorHandling } from "./common/index.js";
 import { cleanupUploads } from "./middleware/cleanupUploads.js";
-// import { pathToFileURL } from 'url'
 import cors from "cors";
+import { uploadsDir } from "./common/utils/file/storage.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadsDir = path.resolve(__dirname, '../uploads')
 // the built React app, copied here by `npm run build:web`
 const publicDir = path.resolve(__dirname, "../public");
 const indexFile = path.join(publicDir, "index.html");
