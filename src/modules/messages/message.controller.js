@@ -13,7 +13,7 @@ router.post('/create-message', upload({ validation: fileValidation.image }).arra
     validation(messageContentValidationSchema),
     async (req, res) => {
         // console.log(req.files);
-        const data = await createMessage(req.body, req.files)
+        const data = await createMessage(req.validation.body, req.files)
         return successResponse({ res, data, status: 201 })
     })
 
@@ -24,7 +24,7 @@ router.post('/create-message-by-account',
     validation(messageContentValidationSchema),
     async (req, res) => {
         // console.log(req.files);
-        const data = await createMessage(req.body, req.files, req.user)
+        const data = await createMessage(req.validation.body, req.files, req.user)
         return successResponse({ res, data, status: 201 })
     })
 

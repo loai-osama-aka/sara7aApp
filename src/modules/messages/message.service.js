@@ -3,11 +3,20 @@ import { userModel } from "../../database/model/user.model.js"
 import { countDocuments, findOneAndDelete, find, findOne, updateOne, create } from "../../common/repository/base.repository.js";
 import { messageModel } from './../../database/model/message.model.js';
 import { removeStoredFiles, uploadedFileUrl } from "../../common/utils/file/storage.js";
-import { randomBytes, createHash } from "node:crypto";
 import { ConflictException } from "../../common/index.js";
 import mongoose from "mongoose";
 import { conversationModel } from "../../database/model/conversation.model.js";
 import { conversationMessageModel } from "../../database/model/conversationMessage.model.js";
+
+const idString = (value) => String(value?._id ?? value ?? "");
+
+const serializeAnonymousMessageForReceiver = (message) => {
+    const safeMessage = message.toObject();
+    safeMessage.identityRequestAvailable =
+        Boolean(message.senderId) && message.identityRequestStatus == null;
+    delete safeMessage.senderId;
+    return safeMessage;
+};
 
 export const createMessage = async (
     { content, receiverId, uniqueName, isAnonymous = true } = {},
@@ -98,12 +107,10 @@ export const getAllMessages = async ({ type, page, limit }, user) => {
 
     // بنمسح id الي بيرسل لوالرساله مبعوته كمجهول
     const safeMessages = messages.map(message => {
-        const isReceiver = message.receiverId._id.toString() === user.sub;
+        const isReceiver = idString(message.receiverId) === idString(user.sub);
 
         if (isReceiver && message.isAnonymous) {
-            const safeMessage = message.toObject();
-            delete safeMessage.senderId;
-            return safeMessage;
+            return serializeAnonymousMessageForReceiver(message);
         }
 
         return message;
@@ -163,12 +170,10 @@ export const getMessage = async ({ messageId }, user) => {
         });
     }
 
-    const isReceiver = data.receiverId._id.toString() === user.sub;
+    const isReceiver = idString(data.receiverId) === idString(user.sub);
 
     if (isReceiver && data.isAnonymous) {
-        const safeMessage = data.toObject();
-        delete safeMessage.senderId;
-        return safeMessage;
+        return serializeAnonymousMessageForReceiver(data);
     }
 
     return data;
@@ -177,6 +182,8 @@ export const getMessage = async ({ messageId }, user) => {
 
 // createRequestIdentity
 export const createRequestIdentity = async (messageId, userId) => {
+
+
     const updateMessage = await updateOne({
         model: messageModel, filter: {
             _id: messageId,
@@ -190,9 +197,12 @@ export const createRequestIdentity = async (messageId, userId) => {
             }
         }
     })
+    // console.log(updateMessage, 'updte');
 
     if (updateMessage) {
-        return updateMessage
+        return {
+            identityRequestStatus: updateMessage.identityRequestStatus
+        }
     }
     const message = await findOne({ model: messageModel, filter: { _id: messageId, receiverId: userId, } })
 
@@ -207,7 +217,7 @@ export const createRequestIdentity = async (messageId, userId) => {
             message: "Cannot request identity for guest messages"
         });
     }
-    if (message.identityRequestStatus) {
+    if (message.identityRequestStatus != null) {
         throw ConflictException({
             message: "Identity request has already been submitted"
         });
