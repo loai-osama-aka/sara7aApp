@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { successResponse } from '../../common/exceptions/successResponse.js';
-import { createMessage, deleteMessage, getAllMessages, getMessage } from './message.service.js';
+import { createMessage, createRequestIdentity, deleteMessage, getAllMessages, getConversationMessages, getIdentityRequests, getMessage, getUserConversations, respondToIdentityRequest, sendConversationMessage } from './message.service.js';
 import { fileValidation, upload } from '../../middleware/multer.js';
-import { deleteMessageSchema, getAllMessageSchema, messageContentValidationSchema } from './message.validation.js';
+import { deleteMessageSchema, getAllMessageSchema, getConversationMessagesSchema, messageContentValidationSchema, respondToIdentityRequestSchema } from './message.validation.js';
 import { validation } from '../../middleware/validation.middleware.js';
 import { auth } from '../../middleware/authentication.middleware.js';
 const router = Router();
@@ -12,7 +12,7 @@ const router = Router();
 router.post('/create-message', upload({ validation: fileValidation.image }).array('attachments', 3),
     validation(messageContentValidationSchema),
     async (req, res) => {
-        console.log(req.files);
+        // console.log(req.files);
         const data = await createMessage(req.body, req.files)
         return successResponse({ res, data, status: 201 })
     })
@@ -55,5 +55,58 @@ router.get('/get-message/:messageId',
         return successResponse({ res, data })
     })
 
+// request the sender identity
+router.post('/request-identity/:messageId', auth, async (req, res) => {
+    const { messageId } = req.params
+    const data = await createRequestIdentity(messageId, req.user.sub)
+    return successResponse({ res, data, status: 201 })
+})
+
+// Get identity requests using anonymous token
+router.get("/identity-requests", auth, async (req, res) => {
+
+
+    const data = await getIdentityRequests(req.user);
+
+    return successResponse({ res, data });
+});
+
+
+// Accept / Reject identity request
+router.patch("/identity-request/:messageId", auth, validation(respondToIdentityRequestSchema),
+    async (req, res) => {
+        const { messageId } = req.params;
+        const { status } = req.body;
+
+        const data = await respondToIdentityRequest(
+            messageId,
+            status,
+            req.user.sub
+        );
+
+        return successResponse({ res, data });
+    }
+);
+
+router.get('/user-conversation', auth, async (req, res) => {
+    const data = await getUserConversations(req.user)
+    return successResponse({ res, data })
+})
+
+router.post('/create-conversation-message', auth, upload({ validation: fileValidation.image }).array('attachments', 3), async (req, res) => {
+
+    const data = await sendConversationMessage(req.body, req.files, req.user)
+    return successResponse({ res, data, status: 201 })
+})
+
+router.get('/conversation-messages/:conversationId', auth, validation(getConversationMessagesSchema),
+    async (req, res) => {
+        const data = await getConversationMessages({ conversationId: req.params.conversationId, ...req.query },
+            req.user
+        );
+
+        return successResponse({ res, data });
+    }
+);
 
 export default router

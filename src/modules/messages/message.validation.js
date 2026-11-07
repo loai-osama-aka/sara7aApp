@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import z from "zod";
+import { StatusEnum } from "../../common/index.js";
+
 
 export const messageContentValidationSchema = z.object({
     body: z.strictObject({
@@ -12,7 +14,14 @@ export const messageContentValidationSchema = z.object({
             .min(3, { message: "uniqueName must be at least 3 characters" })
             .max(20, { message: "uniqueName must be at most 20 characters" })
             .regex(/^[a-z0-9_]+$/i, { message: "invalid uniqueName" })
-            .optional()
+            .optional(),
+        isAnonymous: z.preprocess((value) => {
+            // console.log(value);
+
+            if (value === "true") return true;
+            if (value === "false") return false;
+            return value;
+        }, z.boolean().default(true))
     }),
     files: z.array(
         z.strictObject({
@@ -67,3 +76,32 @@ export const deleteMessageSchema = z.object({
 
 
 })
+
+
+export const respondToIdentityRequestSchema = z.object({
+    params: z.object({
+        messageId: z.string().length(24)
+    }),
+    body: z.object({
+        status: z.coerce.number().refine(
+            (value) => [
+                StatusEnum.Accepted,
+                StatusEnum.Rejected
+            ].includes(value),
+            {
+                message: "Status must be Accepted or Rejected"
+            }
+        )
+    })
+});
+
+
+export const getConversationMessagesSchema = z.object({
+    params: z.object({
+        conversationId: z.string().length(24)
+    }),
+    query: z.object({
+        page: z.coerce.number().int().min(1).default(1),
+        limit: z.coerce.number().int().min(1).max(100).default(20)
+    })
+});

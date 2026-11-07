@@ -10,3 +10,9 @@ export const providerEnum = {
   System: 0,
   google: 1,
 };
+
+export const StatusEnum = {
+  Pending: 0,
+  Accepted: 1,
+  Rejected: 2
+}

@@ -1,4 +1,5 @@
 import mongoose, { Schema, Types } from "mongoose";
+import { StatusEnum } from "../../common/index.js";
 
 const messageSchema = Schema(
   {
@@ -19,7 +20,17 @@ const messageSchema = Schema(
       type: Types.ObjectId,
       ref: 'user',
       required: true
+    },
+    identityRequestStatus: {
+      type: String,
+      enum: StatusEnum,
+      default: null
+    },
+    isAnonymous: {
+      type: Boolean,
+      default: true
     }
+
 
   },
   { timestamps: true },

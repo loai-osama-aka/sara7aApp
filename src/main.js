@@ -30,6 +30,9 @@ app.get("/", (req, res) => {
 
 // dedicated health endpoint
 app.get("/health", (req, res) => {
+  // console.log(req.path);
+  // console.log(req.ip);
+
   res.status(200).json({ status: "ok", uptime: process.uptime() });
 });
 

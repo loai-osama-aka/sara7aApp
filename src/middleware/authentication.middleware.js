@@ -38,7 +38,7 @@ export const auth = async (req, res, next) => {
       if (!payload) {
         throw BadRequestException({ message: "Invalid token format" })
       }
-      console.log(await exists(revokeTokenKey(payload.sub, payload.jti)), 'ls');
+      // console.log(await exists(revokeTokenKey(payload.sub, payload.jti)), 'ls');
 
       if (await exists(revokeTokenKey(payload.sub, payload.jti))) {
         throw UnauthorizedException({ message: "Expired login credentials" })
